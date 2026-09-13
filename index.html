@@ -97,6 +97,42 @@
     margin-bottom:8px;
     color:var(--ink);
   }
+  .mode-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .mode-btn{
+    flex:1;
+    min-width:150px;
+    padding:16px 10px;
+    border-radius:16px;
+    border:2px solid var(--bg2);
+    background:var(--bg2);
+    font-weight:bold;
+    cursor:pointer;
+    font-size:1rem;
+    color:var(--ink);
+    text-align:center;
+    line-height:1.35;
+  }
+  .mode-btn .mode-icon{
+    display:block;
+    font-size:1.7rem;
+    margin-bottom:4px;
+  }
+  .mode-btn .mode-sub{
+    display:block;
+    font-weight:normal;
+    font-size:0.78rem;
+    color:var(--sub);
+  }
+  .mode-btn.selected{
+    border-color:var(--purple);
+    background:#f1e9ff;
+    color:var(--purple-dark);
+  }
+  .mode-btn.selected .mode-sub{ color:var(--purple-dark); }
   .cat-grid{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -117,6 +153,10 @@
   .cat-option.checked{
     border-color:var(--purple);
     background:#f1e9ff;
+  }
+  .cat-option.disabled{
+    opacity:0.45;
+    cursor:not-allowed;
   }
   .cat-option input{
     width:20px;height:20px;accent-color:var(--purple);
@@ -201,6 +241,25 @@
     color:var(--sub);
     margin-bottom:6px;
   }
+  .mode-tag{
+    display:inline-block;
+    background:var(--bg2);
+    color:var(--purple-dark);
+    border-radius:20px;
+    padding:4px 12px;
+    font-size:0.8rem;
+    font-weight:bold;
+    margin-bottom:12px;
+  }
+  .picture-box{
+    text-align:center;
+    font-size:5.5rem;
+    line-height:1;
+    background:var(--bg2);
+    border-radius:20px;
+    padding:26px 10px;
+    margin-bottom:16px;
+  }
   .word-actions{
     display:flex;
     gap:10px;
@@ -218,6 +277,11 @@
     color:#fff;
     cursor:pointer;
     box-shadow:0 6px 14px rgba(58,166,255,0.4);
+  }
+  .round-btn:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
+    box-shadow:none;
   }
   .round-btn.hint{
     background:linear-gradient(135deg,var(--yellow),#f0a500);
@@ -326,6 +390,11 @@
     font-weight:bold;
     color:#c8323b;
   }
+  .missed-list li .m-emoji{
+    display:block;
+    font-size:1.3rem;
+    margin-bottom:2px;
+  }
   .all-correct{
     text-align:center;
     font-size:1.1rem;
@@ -345,6 +414,17 @@
     margin-bottom:16px;
     text-align:center;
   }
+  .silent-badge{
+    display:inline-block;
+    background:#ffe6f4;
+    color:#b3277a;
+    border-radius:20px;
+    padding:3px 10px;
+    font-size:0.75rem;
+    font-weight:bold;
+    margin-left:6px;
+    vertical-align:middle;
+  }
   footer{
     text-align:center;
     font-size:0.78rem;
@@ -354,6 +434,7 @@
   @media (max-width:420px){
     header h1{ font-size:1.6rem; }
     .flash-word{ font-size:1.9rem; }
+    .picture-box{ font-size:4rem; padding:18px 10px; }
     .round-btn{ width:60px; height:60px; font-size:1.5rem; }
   }
 </style>
@@ -362,7 +443,7 @@
 <div class="app">
   <header>
     <h1>🌟 Ella's Spelling Adventure 🌟</h1>
-    <p>Listen carefully, then spell the word!</p>
+    <p>Listen, or look at the picture, then spell the word!</p>
   </header>
 
   <!-- START SCREEN -->
@@ -370,17 +451,23 @@
     <div class="stats-row" id="statsRow"></div>
 
     <div id="speechWarning" class="speech-warning hidden">
-      This browser can't speak words out loud, so we'll use <b>Flash Card Mode</b> instead —
+      This browser can't speak words out loud, so Listen &amp; Spell will use <b>Flash Card Mode</b> instead —
       the word will flash on screen for a few seconds, then hide, and you spell it from memory.
+      Picture &amp; Spell works great either way!
     </div>
 
     <fieldset>
-      <legend>1. Choose word groups</legend>
+      <legend>1. Choose how to practice</legend>
+      <div class="mode-row" id="modeRow"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>2. Choose word groups</legend>
       <div class="cat-grid" id="catGrid"></div>
     </fieldset>
 
     <fieldset>
-      <legend>2. How many words this round?</legend>
+      <legend>3. How many words this round?</legend>
       <div class="len-row" id="lenRow"></div>
     </fieldset>
 
@@ -394,7 +481,9 @@
       <span id="scoreLabel">⭐ Score: 0</span>
     </div>
     <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+    <span class="mode-tag" id="modeTag">🔊 Listen &amp; Spell</span>
 
+    <div class="picture-box hidden" id="pictureBox"></div>
     <div class="flash-word hidden" id="flashWord"></div>
 
     <div class="word-actions">
@@ -439,58 +528,74 @@
 (function(){
   "use strict";
 
-  /* ---------------- Word Bank ---------------- */
+  /* ---------------- Word Bank ----------------
+     Each entry: [word, sentence, emoji]
+     emoji is "" when there's no single unambiguous picture for that word
+     (those words are only used in Listen & Spell mode).
+  ------------------------------------------------ */
   const WORD_BANK = {
     "Short Vowel Words": [
-      ["cat","I have a pet cat."],["dog","My dog likes to run."],["sun","The sun is very bright."],
-      ["hop","Can you hop on one foot?"],["bed","I sleep in my bed."],["pig","The pig rolled in the mud."],
-      ["run","Let's run to the park."],["ten","I count to ten."],["big","That is a big tree."],
-      ["red","She wore a red hat."],["hot","The soup is too hot."],["fun","We had fun at the fair."],
-      ["six","I have six crayons."],["box","Put the toys in the box."],["wet","My shoes got wet."],
-      ["top","He spun the top."],["jam","I like jam on toast."],["net","The fish is in the net."],
-      ["cup","Fill the cup with milk."],["mad","Don't be mad at me."]
+      ["cat","I have a pet cat.","🐱"],["dog","My dog likes to run.","🐶"],["sun","The sun is very bright.","☀️"],
+      ["hop","Can you hop on one foot?",""],["bed","I sleep in my bed.","🛏️"],["pig","The pig rolled in the mud.","🐷"],
+      ["run","Let's run to the park.",""],["ten","I count to ten.",""],["big","That is a big tree.",""],
+      ["red","She wore a red hat.",""],["hot","The soup is too hot.",""],["fun","We had fun at the fair.",""],
+      ["six","I have six crayons.",""],["box","Put the toys in the box.","📦"],["wet","My shoes got wet.",""],
+      ["top","He spun the top.",""],["jam","I like jam on toast.",""],["net","The fish is in the net.",""],
+      ["cup","Fill the cup with milk.",""],["mad","Don't be mad at me.",""]
     ],
     "Long Vowel Words": [
-      ["cake","We ate cake at the party."],["bike","I ride my bike to school."],["home","Let's go home now."],
-      ["cute","The puppy is so cute."],["rice","We had rice for dinner."],["hope","I hope it doesn't rain."],
-      ["time","What time is it?"],["note","She wrote me a note."],["rule","That is an important rule."],
-      ["game","Let's play a game."],["five","I have five fingers."],["nose","My nose is cold."],
-      ["lake","We swam in the lake."],["pine","The pine tree smells nice."],["cube","An ice cube is cold."],
-      ["line","Stand in a straight line."],["rose","She gave me a rose."],["dime","A dime is ten cents."],
-      ["tape","Use tape to fix the paper."],["wave","Wave goodbye to grandma."]
+      ["cake","We ate cake at the party.","🎂"],["bike","I ride my bike to school.","🚲"],["home","Let's go home now.",""],
+      ["cute","The puppy is so cute.",""],["rice","We had rice for dinner.","🍚"],["hope","I hope it doesn't rain.",""],
+      ["time","What time is it?",""],["note","She wrote me a note.","📝"],["rule","That is an important rule.",""],
+      ["game","Let's play a game.","🎮"],["five","I have five fingers.",""],["nose","My nose is cold.","👃"],
+      ["lake","We swam in the lake.",""],["pine","The pine tree smells nice.",""],["cube","An ice cube is cold.",""],
+      ["line","Stand in a straight line.",""],["rose","She gave me a rose.","🌹"],["dime","A dime is ten cents.",""],
+      ["tape","Use tape to fix the paper.",""],["wave","Wave goodbye to grandma.","🌊"]
     ],
     "Blends & Digraphs": [
-      ["chip","I ate one chip."],["ship","The ship sailed away."],["thin","The ice was very thin."],
-      ["shop","We went to the shop."],["chin","He has a small chin."],["that","I want that toy."],
-      ["when","When is your birthday?"],["whale","The whale is huge."],["chick","The chick hatched today."],
-      ["shell","I found a shell on the beach."],["think","I think it will rain."],["shark","The shark swam by."],
-      ["wheel","The wheel is round."],["chest","He opened the treasure chest."],["shape","What shape is this?"],
-      ["whisk","Use a whisk to mix eggs."],["chart","Look at the chart."],["shine","The stars shine at night."],
-      ["thank","I want to thank you."],["bench","We sat on the bench."]
+      ["chip","I ate one chip.",""],["ship","The ship sailed away.","🚢"],["thin","The ice was very thin.",""],
+      ["shop","We went to the shop.",""],["chin","He has a small chin.",""],["that","I want that toy.",""],
+      ["when","When is your birthday?",""],["whale","The whale is huge.","🐳"],["chick","The chick hatched today.","🐤"],
+      ["shell","I found a shell on the beach.","🐚"],["think","I think it will rain.","🤔"],["shark","The shark swam by.","🦈"],
+      ["wheel","The wheel is round.","🛞"],["chest","He opened the treasure chest.",""],["shape","What shape is this?",""],
+      ["whisk","Use a whisk to mix eggs.",""],["chart","Look at the chart.","📊"],["shine","The stars shine at night.",""],
+      ["thank","I want to thank you.",""],["bench","We sat on the bench.",""]
     ],
     "Sight & Tricky Words": [
-      ["because","I stayed home because I was sick."],["people","Many people came to the show."],
-      ["friend","She is my best friend."],["before","Wash your hands before eating."],
-      ["water","Please drink more water."],["again","Can we play again?"],
-      ["could","I could not find my shoe."],["would","She would love a puppy."],
-      ["should","You should try your best."],["little","The little dog barked."],
-      ["together","We worked together."],["always","I always brush my teeth."],
-      ["about","Tell me about your day."],["other","Where is the other sock?"],
-      ["every","Every day I read a book."],["first","She was first in line."],
-      ["school","I ride the bus to school."],["house","Our house is blue."],
-      ["night","We watched stars at night."],["right","Turn right at the corner."]
+      ["because","I stayed home because I was sick.",""],["people","Many people came to the show.","👥"],
+      ["friend","She is my best friend.",""],["before","Wash your hands before eating.",""],
+      ["water","Please drink more water.","💧"],["again","Can we play again?",""],
+      ["could","I could not find my shoe.",""],["would","She would love a puppy.",""],
+      ["should","You should try your best.",""],["little","The little dog barked.",""],
+      ["together","We worked together.",""],["always","I always brush my teeth.",""],
+      ["about","Tell me about your day.",""],["other","Where is the other sock?",""],
+      ["every","Every day I read a book.",""],["first","She was first in line.",""],
+      ["school","I ride the bus to school.","🏫"],["house","Our house is blue.","🏠"],
+      ["night","We watched stars at night.",""],["right","Turn right at the corner.",""]
     ],
     "Bigger & Compound Words": [
-      ["something","I need something to drink."],["everyone","Everyone clapped for the team."],
-      ["birthday","Today is my birthday."],["football","He plays football on Saturdays."],
-      ["afternoon","We have practice in the afternoon."],["without","She left without her coat."],
-      ["sunshine","I love the warm sunshine."],["outside","Let's go play outside."],
-      ["playground","The kids ran to the playground."],["weekend","We have no school on the weekend."],
-      ["grandmother","My grandmother bakes cookies."],["backpack","I packed my backpack for school."],
-      ["notebook","Write it down in your notebook."],["butterfly","A butterfly landed on the flower."],
-      ["breakfast","I eat cereal for breakfast."],["sandwich","She made a peanut butter sandwich."],
-      ["holiday","Our favorite holiday is coming soon."],["morning","Good morning, sleepyhead!"],
-      ["evening","We take a walk every evening."],["yesterday","It rained yesterday."]
+      ["something","I need something to drink.",""],["everyone","Everyone clapped for the team.",""],
+      ["birthday","Today is my birthday.",""],["football","He plays football on Saturdays.","🏈"],
+      ["afternoon","We have practice in the afternoon.",""],["without","She left without her coat.",""],
+      ["sunshine","I love the warm sunshine.",""],["outside","Let's go play outside.",""],
+      ["playground","The kids ran to the playground.",""],["weekend","We have no school on the weekend.",""],
+      ["grandmother","My grandmother bakes cookies.",""],["backpack","I packed my backpack for school.","🎒"],
+      ["notebook","Write it down in your notebook.","📓"],["butterfly","A butterfly landed on the flower.","🦋"],
+      ["breakfast","I eat cereal for breakfast.",""],["sandwich","She made a peanut butter sandwich.","🥪"],
+      ["holiday","Our favorite holiday is coming soon.",""],["morning","Good morning, sleepyhead!",""],
+      ["evening","We take a walk every evening.",""],["yesterday","It rained yesterday.",""]
+    ],
+    "Silent Letter Words": [
+      ["knife","Be careful with the sharp knife.","🔪"],["know","Do you know the answer?",""],
+      ["write","Please write your name here.",""],["sign","There is a stop sign on the corner.",""],
+      ["lamb","The lamb followed its mother.",""],["comb","Use a comb to fix your hair.",""],
+      ["thumb","She has a bandage on her thumb.",""],["wrist","I wear my watch on my wrist.",""],
+      ["castle","The king lived in a big castle.","🏰"],["honest","It is important to be honest.",""],
+      ["listen","Please listen to the teacher.",""],["half","I ate half of the sandwich.",""],
+      ["climb","We watched him climb the tree.","🧗"],["ghost","The ghost costume was spooky.","👻"],
+      ["wrong","That answer is wrong, try again.",""],["answer","Raise your hand if you know the answer.",""],
+      ["guess","Can you guess what is in the box?",""],["light","Turn on the light, please.",""],
+      ["hour","We waited for one hour.",""],["scissors","Use the scissors to cut the paper.","✂️"]
     ]
   };
 
@@ -511,7 +616,8 @@
   let stats = loadStats();
 
   /* ---------------- State ---------------- */
-  let roundWords = [];      // [{word, sentence}]
+  let mode = "listen"; // "listen" | "picture"
+  let roundWords = [];      // [{word, sentence, emoji}]
   let roundIndex = 0;
   let roundScore = 0;
   let currentStreak = 0;
@@ -519,6 +625,8 @@
   let hintLevel = 0;
   let lastSourceCategories = [];
   let lastRoundLength = 10;
+  let lastMode = "listen";
+  const SILENT_CATEGORY = "Silent Letter Words";
 
   const speechSupported = ("speechSynthesis" in window);
 
@@ -528,6 +636,7 @@
   const screenResults = document.getElementById("screen-results");
 
   const statsRow = document.getElementById("statsRow");
+  const modeRow = document.getElementById("modeRow");
   const catGrid = document.getElementById("catGrid");
   const lenRow = document.getElementById("lenRow");
   const startBtn = document.getElementById("startBtn");
@@ -536,6 +645,8 @@
   const progressLabel = document.getElementById("progressLabel");
   const scoreLabel = document.getElementById("scoreLabel");
   const progressBar = document.getElementById("progressBar");
+  const modeTag = document.getElementById("modeTag");
+  const pictureBox = document.getElementById("pictureBox");
   const flashWord = document.getElementById("flashWord");
   const hearBtn = document.getElementById("hearBtn");
   const hintBtn = document.getElementById("hintBtn");
@@ -557,6 +668,23 @@
 
   let selectedLen = 10;
 
+  /* ---------------- Helpers over the word bank ---------------- */
+  function categoryCount(cat, forMode){
+    const list = WORD_BANK[cat] || [];
+    if(forMode === "picture"){
+      return list.filter(e => e[2]).length;
+    }
+    return list.length;
+  }
+
+  function findEntry(word){
+    for(const cat of Object.keys(WORD_BANK)){
+      const found = WORD_BANK[cat].find(e => e[0] === word);
+      if(found) return { word:found[0], sentence:found[1], emoji:found[2] };
+    }
+    return null;
+  }
+
   /* ---------------- Build start screen ---------------- */
   function renderStats(){
     const acc = stats.wordsPracticed ? Math.round(100*stats.wordsCorrect/stats.wordsPracticed) : 0;
@@ -567,18 +695,51 @@
     `;
   }
 
+  function renderModes(){
+    const options = [
+      { key:"listen", icon:"🔊", label:"Listen & Spell", sub:"Hear the word, then type it" },
+      { key:"picture", icon:"🖼️", label:"Picture & Spell", sub:"Look at the picture, then type it" }
+    ];
+    modeRow.innerHTML = "";
+    options.forEach(opt=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "mode-btn" + (mode===opt.key ? " selected" : "");
+      btn.innerHTML = `<span class="mode-icon">${opt.icon}</span>${opt.label}<span class="mode-sub">${opt.sub}</span>`;
+      btn.addEventListener("click", ()=>{
+        mode = opt.key;
+        Array.from(modeRow.children).forEach(c=>c.classList.remove("selected"));
+        btn.classList.add("selected");
+        renderCategories();
+      });
+      modeRow.appendChild(btn);
+    });
+  }
+
   function renderCategories(){
+    const previouslyChecked = new Set(
+      Array.from(catGrid.querySelectorAll("input[type=checkbox]"))
+        .filter(cb=>cb.checked).map(cb=>cb.dataset.cat)
+    );
+    const isFirstRender = previouslyChecked.size===0 && catGrid.children.length===0;
+
     catGrid.innerHTML = "";
     Object.keys(WORD_BANK).forEach((cat,i)=>{
+      const count = categoryCount(cat, mode);
+      const disabled = count === 0;
       const id = "cat_"+i;
+      const wasChecked = isFirstRender ? true : previouslyChecked.has(cat);
+      const checked = disabled ? false : wasChecked;
+
       const wrap = document.createElement("label");
-      wrap.className = "cat-option checked";
+      wrap.className = "cat-option" + (checked ? " checked" : "") + (disabled ? " disabled" : "");
       wrap.setAttribute("for", id);
+      const silentTag = cat === SILENT_CATEGORY ? '<span class="silent-badge">🤫 silent letters</span>' : "";
       wrap.innerHTML = `
-        <input type="checkbox" id="${id}" data-cat="${cat}" checked>
+        <input type="checkbox" id="${id}" data-cat="${cat}" ${checked?"checked":""} ${disabled?"disabled":""}>
         <span>
-          <span class="cname">${cat}</span>
-          <span class="ccount">${WORD_BANK[cat].length} words</span>
+          <span class="cname">${cat}${silentTag}</span>
+          <span class="ccount">${count} ${mode==="picture" ? "picture" : ""} word${count===1?"":"s"}${disabled?" (none in this mode)":""}</span>
         </span>
       `;
       catGrid.appendChild(wrap);
@@ -619,14 +780,17 @@
     return a;
   }
 
-  function buildRound(categories, length, wordsOverride){
+  function buildRound(categories, length, forMode, wordsOverride){
     let pool = [];
     if(wordsOverride){
       pool = wordsOverride.slice();
     }else{
       categories.forEach(cat=>{
-        (WORD_BANK[cat]||[]).forEach(([w,s])=> pool.push({word:w, sentence:s}));
+        (WORD_BANK[cat]||[]).forEach(([w,s,e])=> pool.push({word:w, sentence:s, emoji:e}));
       });
+    }
+    if(forMode === "picture"){
+      pool = pool.filter(e => e.emoji);
     }
     pool = shuffle(pool);
     return pool.slice(0, Math.min(length, pool.length));
@@ -640,9 +804,10 @@
     }
     lastSourceCategories = cats;
     lastRoundLength = selectedLen;
-    roundWords = buildRound(cats, selectedLen);
+    lastMode = mode;
+    roundWords = buildRound(cats, selectedLen, mode);
     if(roundWords.length===0){
-      alert("No words available — try choosing a different group.");
+      alert("There aren't enough picture words in those groups yet. Try picking more groups, or switch to Listen & Spell.");
       return;
     }
     beginRound();
@@ -655,6 +820,7 @@
     currentStreak = 0;
     missedThisRound = [];
     showScreen(screenPractice);
+    modeTag.textContent = lastMode === "picture" ? "🖼️ Picture & Spell" : "🔊 Listen & Spell";
     loadWord();
   }
 
@@ -679,18 +845,30 @@
     answerInput.disabled = false;
     flashWord.classList.add("hidden");
     flashWord.textContent = "";
+    pictureBox.classList.add("hidden");
+    pictureBox.textContent = "";
 
     const total = roundWords.length;
     progressLabel.textContent = `Word ${roundIndex+1} of ${total}`;
     scoreLabel.textContent = `⭐ Score: ${roundScore}`;
     progressBar.style.width = Math.round((roundIndex/total)*100) + "%";
 
-    if(speechSupported){
+    const w = currentWord();
+
+    if(lastMode === "picture"){
+      pictureBox.textContent = w.emoji;
+      pictureBox.classList.remove("hidden");
       speechWarning.classList.add("hidden");
-      speakWordSequence();
+      hearBtn.disabled = !speechSupported;
     }else{
-      speechWarning.classList.remove("hidden");
-      flashCardReveal();
+      hearBtn.disabled = false;
+      if(speechSupported){
+        speechWarning.classList.add("hidden");
+        speakWordSequence();
+      }else{
+        speechWarning.classList.remove("hidden");
+        flashCardReveal();
+      }
     }
     answerInput.focus();
   }
@@ -713,9 +891,11 @@
       window.speechSynthesis.speak(u2);
       window.speechSynthesis.speak(u3);
     }catch(e){
-      // if speaking fails for some reason, fall back to flash card
-      speechWarning.classList.remove("hidden");
-      flashCardReveal();
+      // if speaking fails for some reason, fall back to flash card (Listen mode only)
+      if(lastMode !== "picture"){
+        speechWarning.classList.remove("hidden");
+        flashCardReveal();
+      }
     }
   }
 
@@ -732,7 +912,7 @@
   hearBtn.addEventListener("click", ()=>{
     if(speechSupported){
       speakWordSequence();
-    }else{
+    }else if(lastMode !== "picture"){
       flashCardReveal();
     }
   });
@@ -840,8 +1020,10 @@
       retryMissedBtn.classList.remove("hidden");
       missedList.innerHTML = "";
       missedThisRound.forEach(m=>{
+        const entry = findEntry(m.word);
         const li = document.createElement("li");
-        li.textContent = m.word;
+        const emojiHtml = (entry && entry.emoji) ? `<span class="m-emoji">${entry.emoji}</span>` : "";
+        li.innerHTML = `${emojiHtml}${m.word}`;
         missedList.appendChild(li);
       });
     }
@@ -849,20 +1031,15 @@
   }
 
   retryMissedBtn.addEventListener("click", ()=>{
-    const words = missedThisRound.map(m=>{
-      // find sentence for this word
-      for(const cat of Object.keys(WORD_BANK)){
-        const found = WORD_BANK[cat].find(([w])=>w===m.word);
-        if(found) return {word:found[0], sentence:found[1]};
-      }
-      return {word:m.word, sentence:""};
-    });
+    const words = missedThisRound
+      .map(m => findEntry(m.word))
+      .filter(Boolean);
     roundWords = shuffle(words);
     beginRound();
   });
 
   newRoundBtn.addEventListener("click", ()=>{
-    roundWords = buildRound(lastSourceCategories, lastRoundLength);
+    roundWords = buildRound(lastSourceCategories, lastRoundLength, lastMode);
     beginRound();
   });
 
@@ -873,6 +1050,7 @@
 
   /* ---------------- Init ---------------- */
   renderStats();
+  renderModes();
   renderCategories();
   renderLengths();
   if(!speechSupported){
