@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ella's Spelling Adventure</title>
+<title>Srija's Learning Adventure</title>
 <style>
   :root{
     --bg1:#fef6e4;
@@ -431,23 +431,117 @@
     color:var(--sub);
     margin-top:8px;
   }
+
+  /* ---- Subject picker (home screen) ---- */
+  .subject-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:14px;
+  }
+  .subject-card{
+    background:var(--bg2);
+    border-radius:20px;
+    padding:30px 18px;
+    text-align:center;
+    cursor:pointer;
+    border:3px solid transparent;
+    transition:transform .15s, border-color .15s;
+  }
+  .subject-card:hover{ transform:translateY(-2px); }
+  .subject-card .s-icon{ font-size:3rem; display:block; margin-bottom:8px; }
+  .subject-card .s-title{ font-size:1.25rem; font-weight:bold; color:var(--purple-dark); }
+  .subject-card .s-sub{ font-size:0.85rem; color:var(--sub); margin-top:4px; }
+  .subject-card.math{ background:#eafbef; }
+  .subject-card.math:hover, .subject-card.math.checked{ border-color:var(--green); }
+  .subject-card.spelling:hover, .subject-card.spelling.checked{ border-color:var(--purple); }
+
+  /* ---- Math practice ---- */
+  .problem-text{
+    text-align:center;
+    font-size:2.6rem;
+    font-weight:bold;
+    color:var(--purple-dark);
+    margin:14px 0 16px;
+    letter-spacing:1px;
+  }
+  .math-instruction{
+    text-align:center;
+    color:var(--sub);
+    font-size:0.9rem;
+    margin-bottom:6px;
+  }
+  .counting-box{
+    text-align:center;
+    font-size:2rem;
+    line-height:1.7;
+    background:var(--bg2);
+    border-radius:20px;
+    padding:20px 14px;
+    margin-bottom:16px;
+    word-spacing:8px;
+  }
+  .choice-row{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    margin:6px 0 4px;
+    flex-wrap:wrap;
+  }
+  .choice-btn{
+    flex:1;
+    min-width:80px;
+    padding:18px;
+    font-size:1.8rem;
+    font-weight:bold;
+    border-radius:16px;
+    border:2px solid var(--bg2);
+    background:var(--bg2);
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .choice-btn:hover:not(:disabled){ border-color:var(--green); }
+  .choice-btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .choice-btn.correct{ border-color:var(--green); background:var(--green-bg); color:#1e8f56; }
+  .choice-btn.incorrect{ border-color:var(--red); background:var(--red-bg); color:#c8323b; }
+
   @media (max-width:420px){
     header h1{ font-size:1.6rem; }
     .flash-word{ font-size:1.9rem; }
     .picture-box{ font-size:4rem; padding:18px 10px; }
     .round-btn{ width:60px; height:60px; font-size:1.5rem; }
+    .problem-text{ font-size:2rem; }
+    .counting-box{ font-size:1.6rem; }
+    .choice-btn{ font-size:1.4rem; padding:14px; }
   }
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-    <h1>🌟 Srija's Spelling Adventure 🌟</h1>
-    <p>Listen, or look at the picture, then spell the word!</p>
+    <h1>🌟 Srija's Learning Adventure 🌟</h1>
+    <p>Pick a subject, then practice and have fun!</p>
   </header>
 
-  <!-- START SCREEN -->
-  <section id="screen-start" class="card">
+  <!-- HOME SCREEN -->
+  <section id="screen-home" class="card">
+    <div class="subject-grid">
+      <div class="subject-card spelling" id="goSpelling">
+        <span class="s-icon">🔤</span>
+        <div class="s-title">Spelling</div>
+        <div class="s-sub">Listen or look at a picture, then spell the word</div>
+      </div>
+      <div class="subject-card math" id="goMath">
+        <span class="s-icon">🔢</span>
+        <div class="s-title">Math</div>
+        <div class="s-sub">Addition, subtraction &amp; logic puzzles</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPELLING START SCREEN -->
+  <section id="screen-start" class="card hidden">
+    <button class="secondary-btn" id="backHomeFromSpelling" style="margin-top:0;margin-bottom:16px;">⬅ Subjects</button>
+
     <div class="stats-row" id="statsRow"></div>
 
     <div id="speechWarning" class="speech-warning hidden">
@@ -474,7 +568,7 @@
     <button class="big-btn" id="startBtn">▶️ Start Practicing</button>
   </section>
 
-  <!-- PRACTICE SCREEN -->
+  <!-- SPELLING PRACTICE SCREEN -->
   <section id="screen-practice" class="card hidden">
     <div class="practice-top">
       <span id="progressLabel">Word 1 of 10</span>
@@ -503,7 +597,7 @@
     </div>
   </section>
 
-  <!-- RESULTS SCREEN -->
+  <!-- SPELLING RESULTS SCREEN -->
   <section id="screen-results" class="card hidden">
     <h2>Round Complete! 🎉</h2>
     <div class="results-score" id="resultsScore">0 / 0</div>
@@ -521,13 +615,129 @@
     <button class="secondary-btn" id="menuBtn">🏠 Back to Menu</button>
   </section>
 
-  <footer>Works fully offline — no internet or account needed. Made with ❤️ for practicing spelling.</footer>
+  <!-- MATH START SCREEN -->
+  <section id="screen-math-start" class="card hidden">
+    <button class="secondary-btn" id="backHomeFromMath" style="margin-top:0;margin-bottom:16px;">⬅ Subjects</button>
+
+    <div class="stats-row" id="mathStatsRow"></div>
+
+    <fieldset>
+      <legend>1. Choose what to practice</legend>
+      <div class="cat-grid" id="mathCatGrid"></div>
+    </fieldset>
+
+    <fieldset>
+      <legend>2. How many problems this round?</legend>
+      <div class="len-row" id="mathLenRow"></div>
+    </fieldset>
+
+    <button class="big-btn" id="mathStartBtn">▶️ Start Practicing</button>
+  </section>
+
+  <!-- MATH PRACTICE SCREEN -->
+  <section id="screen-math-practice" class="card hidden">
+    <div class="practice-top">
+      <span id="mathProgressLabel">Problem 1 of 10</span>
+      <span id="mathScoreLabel">⭐ Score: 0</span>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="mathProgressBar"></div></div>
+    <span class="mode-tag" id="mathCatTag">➕ Math</span>
+
+    <div class="math-instruction" id="mathInstruction"></div>
+    <div class="counting-box hidden" id="countingBox"></div>
+    <div class="problem-text hidden" id="problemText"></div>
+
+    <div class="choice-row hidden" id="choiceRow"></div>
+
+    <input type="text" id="mathAnswerInput" inputmode="numeric" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer">
+
+    <div class="word-actions" style="margin:14px 0 0;">
+      <button class="round-btn hint" id="mathHintBtn" title="Get a hint">💡</button>
+    </div>
+    <div class="hint-line" id="mathHintLine"></div>
+
+    <button class="big-btn" id="mathSubmitBtn" style="margin-top:10px;">Check My Answer</button>
+
+    <div class="feedback" id="mathFeedback"></div>
+
+    <div class="next-wrap hidden" id="mathNextWrap">
+      <button class="secondary-btn" id="mathNextBtn">Next Problem ➜</button>
+    </div>
+  </section>
+
+  <!-- MATH RESULTS SCREEN -->
+  <section id="screen-math-results" class="card hidden">
+    <h2>Round Complete! 🎉</h2>
+    <div class="results-score" id="mathResultsScore">0 / 0</div>
+    <div class="results-sub" id="mathResultsSub"></div>
+
+    <div id="mathAllCorrectBanner" class="all-correct hidden">Perfect round — every problem correct! Amazing job! 🏆</div>
+
+    <div id="mathMissedWrap">
+      <p style="margin-bottom:8px;color:var(--sub);">Problems to practice again:</p>
+      <ul class="missed-list" id="mathMissedList"></ul>
+    </div>
+
+    <button class="big-btn" id="mathRetryMissedBtn">🔁 Practice Missed Problems</button>
+    <button class="secondary-btn" id="mathNewRoundBtn">🎲 New Round</button>
+    <button class="secondary-btn" id="mathMenuBtn">🏠 Back to Menu</button>
+  </section>
+
+  <footer>Works fully offline — no internet or account needed. Made with ❤️ for practicing spelling and math.</footer>
 </div>
 
 <script>
 (function(){
   "use strict";
 
+  /* =========================================================
+     SHARED HELPERS
+  ========================================================= */
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function randInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+  /* =========================================================
+     NAVIGATION (all screens)
+  ========================================================= */
+  const screenHome = document.getElementById("screen-home");
+  const screenStart = document.getElementById("screen-start");
+  const screenPractice = document.getElementById("screen-practice");
+  const screenResults = document.getElementById("screen-results");
+  const screenMathStart = document.getElementById("screen-math-start");
+  const screenMathPractice = document.getElementById("screen-math-practice");
+  const screenMathResults = document.getElementById("screen-math-results");
+
+  const ALL_SCREENS = [screenHome, screenStart, screenPractice, screenResults,
+                        screenMathStart, screenMathPractice, screenMathResults];
+
+  function showScreen(target){
+    ALL_SCREENS.forEach(s=>s.classList.add("hidden"));
+    target.classList.remove("hidden");
+  }
+
+  document.getElementById("goSpelling").addEventListener("click", ()=>{
+    renderStats();
+    showScreen(screenStart);
+  });
+  document.getElementById("goMath").addEventListener("click", ()=>{
+    renderMathStats();
+    showScreen(screenMathStart);
+  });
+  document.getElementById("backHomeFromSpelling").addEventListener("click", ()=> showScreen(screenHome));
+  document.getElementById("backHomeFromMath").addEventListener("click", ()=> showScreen(screenHome));
+
+
+  /* =========================================================
+     SPELLING (unchanged behavior)
+  ========================================================= */
   /* ---------------- Word Bank ----------------
      Each entry: [word, sentence, emoji]
      emoji is "" when there's no single unambiguous picture for that word
@@ -601,7 +811,6 @@
 
   const STORAGE_KEY = "ellaSpellingStats_v1";
 
-  /* ---------------- Storage (safe) ---------------- */
   function loadStats(){
     try{
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -609,19 +818,18 @@
     }catch(e){ /* storage unavailable, fall back to memory */ }
     return { wordsPracticed:0, wordsCorrect:0, bestStreak:0, roundsPlayed:0 };
   }
-  function saveStats(stats){
-    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(stats)); }
+  function saveStats(s){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
     catch(e){ /* ignore, memory-only for this session */ }
   }
   let stats = loadStats();
 
-  /* ---------------- State ---------------- */
   let mode = "listen"; // "listen" | "picture"
-  let roundWords = [];      // [{word, sentence, emoji}]
+  let roundWords = [];
   let roundIndex = 0;
   let roundScore = 0;
   let currentStreak = 0;
-  let missedThisRound = []; // [{word, typed}]
+  let missedThisRound = [];
   let hintLevel = 0;
   let lastSourceCategories = [];
   let lastRoundLength = 10;
@@ -629,11 +837,6 @@
   const SILENT_CATEGORY = "Silent Letter Words";
 
   const speechSupported = ("speechSynthesis" in window);
-
-  /* ---------------- DOM refs ---------------- */
-  const screenStart = document.getElementById("screen-start");
-  const screenPractice = document.getElementById("screen-practice");
-  const screenResults = document.getElementById("screen-results");
 
   const statsRow = document.getElementById("statsRow");
   const modeRow = document.getElementById("modeRow");
@@ -668,7 +871,6 @@
 
   let selectedLen = 10;
 
-  /* ---------------- Helpers over the word bank ---------------- */
   function categoryCount(cat, forMode){
     const list = WORD_BANK[cat] || [];
     if(forMode === "picture"){
@@ -685,7 +887,6 @@
     return null;
   }
 
-  /* ---------------- Build start screen ---------------- */
   function renderStats(){
     const acc = stats.wordsPracticed ? Math.round(100*stats.wordsCorrect/stats.wordsPracticed) : 0;
     statsRow.innerHTML = `
@@ -771,15 +972,6 @@
     return Array.from(catGrid.querySelectorAll("input[type=checkbox]:checked")).map(cb=>cb.dataset.cat);
   }
 
-  function shuffle(arr){
-    const a = arr.slice();
-    for(let i=a.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [a[i],a[j]] = [a[j],a[i]];
-    }
-    return a;
-  }
-
   function buildRound(categories, length, forMode, wordsOverride){
     let pool = [];
     if(wordsOverride){
@@ -813,7 +1005,6 @@
     beginRound();
   });
 
-  /* ---------------- Practice screen ---------------- */
   function beginRound(){
     roundIndex = 0;
     roundScore = 0;
@@ -822,11 +1013,6 @@
     showScreen(screenPractice);
     modeTag.textContent = lastMode === "picture" ? "🖼️ Picture & Spell" : "🔊 Listen & Spell";
     loadWord();
-  }
-
-  function showScreen(target){
-    [screenStart, screenPractice, screenResults].forEach(s=>s.classList.add("hidden"));
-    target.classList.remove("hidden");
   }
 
   function currentWord(){
@@ -891,7 +1077,6 @@
       window.speechSynthesis.speak(u2);
       window.speechSynthesis.speak(u3);
     }catch(e){
-      // if speaking fails for some reason, fall back to flash card (Listen mode only)
       if(lastMode !== "picture"){
         speechWarning.classList.remove("hidden");
         flashCardReveal();
@@ -967,7 +1152,6 @@
   }
 
   function diffHtml(typed, correct){
-    // Show the correct word, marking letters that differ from what the child typed (position-wise)
     let out = "";
     for(let i=0;i<correct.length;i++){
       const c = correct[i];
@@ -977,8 +1161,6 @@
     }
     return out;
   }
-
-  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
 
   submitBtn.addEventListener("click", checkAnswer);
   answerInput.addEventListener("keydown", (e)=>{
@@ -998,7 +1180,6 @@
     }
   });
 
-  /* ---------------- Results screen ---------------- */
   function finishRound(){
     try{ window.speechSynthesis.cancel(); }catch(e){}
     stats.roundsPlayed++;
@@ -1044,11 +1225,523 @@
   });
 
   menuBtn.addEventListener("click", ()=>{
-    renderStats();
-    showScreen(screenStart);
+    showScreen(screenHome);
   });
 
-  /* ---------------- Init ---------------- */
+
+  /* =========================================================
+     MATH
+  ========================================================= */
+
+  /* ---- Problem generators ----
+     Each returns: { promptText, instruction, type:'number'|'choice', answer, choices?, isCounting? } */
+  function genSingleDigit(){
+    if(Math.random()<0.5){
+      const a=randInt(0,9), b=randInt(0,9);
+      return { promptText:`${a} + ${b} = ?`, instruction:"Add the numbers", type:"number", answer:String(a+b) };
+    }else{
+      const a=randInt(0,9), b=randInt(0,a);
+      return { promptText:`${a} - ${b} = ?`, instruction:"Subtract the numbers", type:"number", answer:String(a-b) };
+    }
+  }
+  function genTwoDigit(){
+    if(Math.random()<0.5){
+      const a=randInt(10,89), b=randInt(10,89);
+      return { promptText:`${a} + ${b} = ?`, instruction:"Add the two numbers", type:"number", answer:String(a+b) };
+    }else{
+      const a=randInt(10,99), b=randInt(10,a);
+      return { promptText:`${a} - ${b} = ?`, instruction:"Subtract the two numbers", type:"number", answer:String(a-b) };
+    }
+  }
+  function genPuzzleSequenceAsc(){
+    const d = pick([1,2,3,5,10]);
+    const start = randInt(0,15);
+    const seq = [start, start+d, start+2*d, start+3*d, start+4*d];
+    const hideIdx = randInt(1,4);
+    const answer = seq[hideIdx];
+    const parts = seq.map((n,i)=> i===hideIdx ? "?" : n);
+    return { promptText:parts.join(",  "), instruction:"Find the missing number in the pattern", type:"number", answer:String(answer) };
+  }
+  function genPuzzleSequenceDesc(){
+    const d = pick([1,2,3]);
+    const start = randInt(20,40);
+    const seq = [start, start-d, start-2*d, start-3*d, start-4*d];
+    const hideIdx = randInt(1,4);
+    const answer = seq[hideIdx];
+    const parts = seq.map((n,i)=> i===hideIdx ? "?" : n);
+    return { promptText:parts.join(",  "), instruction:"Find the missing number in the pattern (it's counting down!)", type:"number", answer:String(answer) };
+  }
+  function genPuzzleCompare(){
+    const a = randInt(0,99), b = randInt(0,99);
+    let answer;
+    if(a<b) answer="<"; else if(a>b) answer=">"; else answer="=";
+    return { promptText:`${a}     ?     ${b}`, instruction:"Pick the sign that makes it true", type:"choice", choices:["<",">","="], answer };
+  }
+  function genPuzzleCompareExpr(){
+    const a = randInt(0,15), b = randInt(0,15);
+    const left = a+b;
+    // sometimes make the right side equal to the left, so "=" shows up too
+    const right = Math.random()<0.3 ? left : randInt(0,30);
+    let answer;
+    if(left<right) answer="<"; else if(left>right) answer=">"; else answer="=";
+    return { promptText:`${a} + ${b}     ?     ${right}`, instruction:"Work out the sum, then pick the sign that makes it true", type:"choice", choices:["<",">","="], answer };
+  }
+  function genPuzzleMissingOperand(){
+    const a = randInt(1,20), b = randInt(1,20);
+    const c = a+b;
+    const hideA = Math.random()<0.5;
+    const display = hideA ? `? + ${b} = ${c}` : `${a} + ? = ${c}`;
+    const answer = hideA ? a : b;
+    return { promptText:display, instruction:"Find the missing number", type:"number", answer:String(answer) };
+  }
+  function genPuzzleCounting(){
+    const emoji = pick(["🍎","⭐","🐱","🎈","🌸","🍪","🚗","⚽"]);
+    const n = randInt(3,12);
+    const display = (emoji+" ").repeat(n).trim();
+    return { promptText:display, instruction:"Count how many there are", type:"number", answer:String(n), isCounting:true };
+  }
+  function genPuzzleOddOneOut(){
+    const majorityEven = Math.random()<0.5;
+    const used = new Set();
+    const makeNum = (even)=>{
+      let n;
+      do{
+        n = randInt(1,50);
+        if((n%2===0) !== even){ n = n+1; }
+      } while(used.has(n));
+      used.add(n);
+      return n;
+    };
+    const numbers = [];
+    for(let i=0;i<4;i++) numbers.push(makeNum(majorityEven));
+    const oddOne = makeNum(!majorityEven);
+    const all = shuffle([...numbers, oddOne]);
+    const answer = String(oddOne);
+    return {
+      promptText:all.join("     "),
+      instruction:"Which number does not belong with the others?",
+      type:"choice",
+      choices:all.map(String),
+      answer,
+      reviewText:`${all.join(", ")}  →  odd one out: ${oddOne}`
+    };
+  }
+  function genPuzzleEvenOdd(){
+    const n = randInt(1,50);
+    const answer = (n%2===0) ? "Even" : "Odd";
+    return {
+      promptText:`${n}`,
+      instruction:"Is this number Even or Odd?",
+      type:"choice",
+      choices:["Even","Odd"],
+      answer,
+      reviewText:`${n} is ${answer}`
+    };
+  }
+  function genPuzzleBiggestSmallest(){
+    let nums = [];
+    while(nums.length<3){
+      const n = randInt(1,99);
+      if(!nums.includes(n)) nums.push(n);
+    }
+    const ask = pick(["biggest","smallest"]);
+    const answer = ask==="biggest" ? String(Math.max(...nums)) : String(Math.min(...nums));
+    return {
+      promptText:shuffle(nums).join("     "),
+      instruction:`Which number is the ${ask}?`,
+      type:"choice",
+      choices:nums.map(String),
+      answer,
+      reviewText:`${nums.join(", ")}  →  ${ask}: ${answer}`
+    };
+  }
+  function genPuzzleTrueFalse(){
+    const a = randInt(1,12), b = randInt(1,12);
+    const correctSum = a+b;
+    const isTrue = Math.random()<0.5;
+    let shownSum = correctSum;
+    if(!isTrue){
+      let offset;
+      do{ offset = pick([-3,-2,-1,1,2,3]); } while(correctSum+offset < 0);
+      shownSum = correctSum + offset;
+    }
+    const statement = `${a} + ${b} = ${shownSum}`;
+    const answer = isTrue ? "True" : "False";
+    return {
+      promptText:statement,
+      instruction:"Is this true or false?",
+      type:"choice",
+      choices:["True","False"],
+      answer,
+      reviewText:`${statement}  →  ${answer}`
+    };
+  }
+  function genPuzzle(){
+    const pool = [
+      genPuzzleSequenceAsc, genPuzzleSequenceAsc, genPuzzleSequenceDesc,
+      genPuzzleCompare, genPuzzleCompare, genPuzzleCompareExpr,
+      genPuzzleMissingOperand,
+      genPuzzleCounting,
+      genPuzzleOddOneOut,
+      genPuzzleEvenOdd,
+      genPuzzleBiggestSmallest,
+      genPuzzleTrueFalse
+    ];
+    return pick(pool)();
+  }
+
+  const MATH_CATEGORIES = {
+    "Single-Digit Add & Subtract": { icon:"➕", desc:"Numbers 0–9", tag:"➕➖ Single Digits", generator: genSingleDigit },
+    "Two-Digit Add & Subtract": { icon:"🔢", desc:"Numbers 10–99", tag:"🔢 Two Digits", generator: genTwoDigit },
+    "Puzzles": { icon:"🧩", desc:"Patterns, comparing, counting & logic", tag:"🧩 Puzzles", generator: genPuzzle }
+  };
+
+  const MATH_STORAGE_KEY = "srijaMathStats_v1";
+  function loadMathStats(){
+    try{
+      const raw = localStorage.getItem(MATH_STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){ /* fall back to memory */ }
+    return { problemsPracticed:0, problemsCorrect:0, bestStreak:0, roundsPlayed:0 };
+  }
+  function saveMathStats(s){
+    try{ localStorage.setItem(MATH_STORAGE_KEY, JSON.stringify(s)); }
+    catch(e){ /* memory-only for this session */ }
+  }
+  let mathStats = loadMathStats();
+
+  let mathRoundProblems = [];   // array of problem objects, each tagged with .category
+  let mathRoundIndex = 0;
+  let mathRoundScore = 0;
+  let mathStreak = 0;
+  let mathMissed = [];          // array of problem objects that were answered wrong
+  let lastMathCategories = [];
+  let lastMathRoundLength = 10;
+  let mathSelectedLen = 10;
+
+  const mathStatsRow = document.getElementById("mathStatsRow");
+  const mathCatGrid = document.getElementById("mathCatGrid");
+  const mathLenRow = document.getElementById("mathLenRow");
+  const mathStartBtn = document.getElementById("mathStartBtn");
+
+  const mathProgressLabel = document.getElementById("mathProgressLabel");
+  const mathScoreLabel = document.getElementById("mathScoreLabel");
+  const mathProgressBar = document.getElementById("mathProgressBar");
+  const mathCatTag = document.getElementById("mathCatTag");
+  const mathInstruction = document.getElementById("mathInstruction");
+  const countingBox = document.getElementById("countingBox");
+  const problemText = document.getElementById("problemText");
+  const choiceRow = document.getElementById("choiceRow");
+  const mathAnswerInput = document.getElementById("mathAnswerInput");
+  const mathHintBtn = document.getElementById("mathHintBtn");
+  const mathHintLine = document.getElementById("mathHintLine");
+  const mathSubmitBtn = document.getElementById("mathSubmitBtn");
+  const mathFeedback = document.getElementById("mathFeedback");
+  const mathNextWrap = document.getElementById("mathNextWrap");
+  const mathNextBtn = document.getElementById("mathNextBtn");
+
+  const mathResultsScore = document.getElementById("mathResultsScore");
+  const mathResultsSub = document.getElementById("mathResultsSub");
+  const mathAllCorrectBanner = document.getElementById("mathAllCorrectBanner");
+  const mathMissedWrap = document.getElementById("mathMissedWrap");
+  const mathMissedList = document.getElementById("mathMissedList");
+  const mathRetryMissedBtn = document.getElementById("mathRetryMissedBtn");
+  const mathNewRoundBtn = document.getElementById("mathNewRoundBtn");
+  const mathMenuBtn = document.getElementById("mathMenuBtn");
+
+  function renderMathStats(){
+    const acc = mathStats.problemsPracticed ? Math.round(100*mathStats.problemsCorrect/mathStats.problemsPracticed) : 0;
+    mathStatsRow.innerHTML = `
+      <div class="stat-pill"><span class="num">${mathStats.roundsPlayed}</span><span class="label">Rounds Played</span></div>
+      <div class="stat-pill"><span class="num">${acc}%</span><span class="label">Overall Accuracy</span></div>
+      <div class="stat-pill"><span class="num">${mathStats.bestStreak}</span><span class="label">Best Streak</span></div>
+    `;
+  }
+
+  function renderMathCategories(){
+    const previouslyChecked = new Set(
+      Array.from(mathCatGrid.querySelectorAll("input[type=checkbox]"))
+        .filter(cb=>cb.checked).map(cb=>cb.dataset.cat)
+    );
+    const isFirstRender = previouslyChecked.size===0 && mathCatGrid.children.length===0;
+
+    mathCatGrid.innerHTML = "";
+    Object.keys(MATH_CATEGORIES).forEach((cat,i)=>{
+      const info = MATH_CATEGORIES[cat];
+      const id = "mcat_"+i;
+      const checked = isFirstRender ? true : previouslyChecked.has(cat);
+
+      const wrap = document.createElement("label");
+      wrap.className = "cat-option" + (checked ? " checked" : "");
+      wrap.setAttribute("for", id);
+      wrap.innerHTML = `
+        <input type="checkbox" id="${id}" data-cat="${cat}" ${checked?"checked":""}>
+        <span>
+          <span class="cname">${info.icon} ${cat}</span>
+          <span class="ccount">${info.desc}</span>
+        </span>
+      `;
+      mathCatGrid.appendChild(wrap);
+      const cb = wrap.querySelector("input");
+      cb.addEventListener("change", ()=>{
+        wrap.classList.toggle("checked", cb.checked);
+      });
+    });
+  }
+
+  function renderMathLengths(){
+    const options = [5,10,15,20];
+    mathLenRow.innerHTML = "";
+    options.forEach(n=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "len-btn" + (n===mathSelectedLen ? " selected" : "");
+      btn.textContent = n;
+      btn.addEventListener("click", ()=>{
+        mathSelectedLen = n;
+        Array.from(mathLenRow.children).forEach(c=>c.classList.remove("selected"));
+        btn.classList.add("selected");
+      });
+      mathLenRow.appendChild(btn);
+    });
+  }
+
+  function getSelectedMathCategories(){
+    return Array.from(mathCatGrid.querySelectorAll("input[type=checkbox]:checked")).map(cb=>cb.dataset.cat);
+  }
+
+  function buildMathRound(categories, length, problemsOverride){
+    if(problemsOverride) return shuffle(problemsOverride);
+    const problems = [];
+    for(let i=0;i<length;i++){
+      const cat = pick(categories);
+      const p = MATH_CATEGORIES[cat].generator();
+      p.category = cat;
+      problems.push(p);
+    }
+    return problems;
+  }
+
+  mathStartBtn.addEventListener("click", ()=>{
+    const cats = getSelectedMathCategories();
+    if(cats.length===0){
+      alert("Please choose at least one math topic!");
+      return;
+    }
+    lastMathCategories = cats;
+    lastMathRoundLength = mathSelectedLen;
+    mathRoundProblems = buildMathRound(cats, mathSelectedLen);
+    beginMathRound();
+  });
+
+  function beginMathRound(){
+    mathRoundIndex = 0;
+    mathRoundScore = 0;
+    mathStreak = 0;
+    mathMissed = [];
+    showScreen(screenMathPractice);
+    loadMathProblem();
+  }
+
+  function currentMathProblem(){
+    return mathRoundProblems[mathRoundIndex];
+  }
+
+  function loadMathProblem(){
+    mathHintLine.textContent = "";
+    mathAnswerInput.value = "";
+    mathAnswerInput.classList.remove("correct","incorrect");
+    mathFeedback.classList.remove("show","correct","incorrect");
+    mathFeedback.innerHTML = "";
+    mathNextWrap.classList.add("hidden");
+    mathSubmitBtn.disabled = false;
+    mathAnswerInput.disabled = false;
+
+    const total = mathRoundProblems.length;
+    mathProgressLabel.textContent = `Problem ${mathRoundIndex+1} of ${total}`;
+    mathScoreLabel.textContent = `⭐ Score: ${mathRoundScore}`;
+    mathProgressBar.style.width = Math.round((mathRoundIndex/total)*100) + "%";
+
+    const p = currentMathProblem();
+    mathCatTag.textContent = (MATH_CATEGORIES[p.category] && MATH_CATEGORIES[p.category].tag) || "🔢 Math";
+    mathInstruction.textContent = p.instruction || "";
+
+    countingBox.classList.add("hidden");
+    problemText.classList.add("hidden");
+    if(p.isCounting){
+      countingBox.textContent = p.promptText;
+      countingBox.classList.remove("hidden");
+    }else{
+      problemText.textContent = p.promptText;
+      problemText.classList.remove("hidden");
+    }
+
+    choiceRow.innerHTML = "";
+    if(p.type === "choice"){
+      choiceRow.classList.remove("hidden");
+      mathAnswerInput.classList.add("hidden");
+      mathSubmitBtn.classList.add("hidden");
+      p.choices.forEach(ch=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice-btn";
+        btn.textContent = ch;
+        btn.addEventListener("click", ()=> checkMathAnswer(ch));
+        choiceRow.appendChild(btn);
+      });
+    }else{
+      choiceRow.classList.add("hidden");
+      mathAnswerInput.classList.remove("hidden");
+      mathSubmitBtn.classList.remove("hidden");
+      mathAnswerInput.focus();
+    }
+  }
+
+  mathHintBtn.addEventListener("click", ()=>{
+    const p = currentMathProblem();
+    if(p.type === "choice"){
+      const wrongBtns = Array.from(choiceRow.children).filter(b=>!b.disabled && b.textContent!==p.answer);
+      if(wrongBtns.length>0){
+        const victim = pick(wrongBtns);
+        victim.disabled = true;
+        mathHintLine.textContent = "Hint: I crossed out one wrong answer for you!";
+      }
+    }else{
+      const ans = p.answer;
+      mathHintLine.textContent = ans.length>1
+        ? `Hint: the answer has ${ans.length} digits and starts with ${ans[0]}`
+        : `Hint: the answer is a single digit`;
+    }
+  });
+
+  function finishMathProblem(correct, userAnswer){
+    const p = currentMathProblem();
+    mathStats.problemsPracticed++;
+    mathSubmitBtn.disabled = true;
+    mathAnswerInput.disabled = true;
+    Array.from(choiceRow.children).forEach(b=> b.disabled = true);
+
+    if(correct){
+      mathStreak++;
+      mathRoundScore++;
+      mathStats.problemsCorrect++;
+      if(mathStreak > mathStats.bestStreak) mathStats.bestStreak = mathStreak;
+      mathFeedback.className = "feedback show correct";
+      const cheer = pick(["Awesome! 🎉","Great job! ⭐","You nailed it! 🚀","Perfect! 🌟","Fantastic! 🥳"]);
+      mathFeedback.innerHTML = cheer;
+      if(p.type==="choice"){
+        const btn = Array.from(choiceRow.children).find(b=>b.textContent===userAnswer);
+        if(btn) btn.classList.add("correct");
+      }else{
+        mathAnswerInput.classList.add("correct");
+      }
+    }else{
+      mathStreak = 0;
+      mathMissed.push(p);
+      mathFeedback.className = "feedback show incorrect";
+      mathFeedback.innerHTML = `Not quite! The correct answer is:` + `<span class="correct-spelling">${p.answer}</span>`;
+      if(p.type==="choice"){
+        const btn = Array.from(choiceRow.children).find(b=>b.textContent===userAnswer);
+        if(btn) btn.classList.add("incorrect");
+        const correctBtn = Array.from(choiceRow.children).find(b=>b.textContent===p.answer);
+        if(correctBtn) correctBtn.classList.add("correct");
+      }else{
+        mathAnswerInput.classList.add("incorrect");
+      }
+    }
+    saveMathStats(mathStats);
+    mathScoreLabel.textContent = `⭐ Score: ${mathRoundScore}`;
+    mathNextWrap.classList.remove("hidden");
+    mathNextBtn.textContent = (mathRoundIndex === mathRoundProblems.length-1) ? "See My Results ➜" : "Next Problem ➜";
+    mathNextBtn.focus();
+  }
+
+  function checkMathAnswer(choiceValue){
+    if(mathSubmitBtn.disabled && choiceRow.classList.contains("hidden")) return;
+    const p = currentMathProblem();
+    let userAnswer;
+    if(p.type === "choice"){
+      userAnswer = choiceValue;
+    }else{
+      userAnswer = mathAnswerInput.value.trim();
+      if(userAnswer===""){
+        mathAnswerInput.focus();
+        return;
+      }
+    }
+    let correct;
+    if(p.type === "choice"){
+      correct = userAnswer === p.answer;
+    }else{
+      correct = !isNaN(Number(userAnswer)) && Number(userAnswer) === Number(p.answer);
+    }
+    finishMathProblem(correct, userAnswer);
+  }
+
+  mathSubmitBtn.addEventListener("click", ()=> checkMathAnswer());
+  mathAnswerInput.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter"){
+      e.preventDefault();
+      if(!mathAnswerInput.disabled){ checkMathAnswer(); }
+      else { mathNextBtn.click(); }
+    }
+  });
+
+  mathNextBtn.addEventListener("click", ()=>{
+    if(mathRoundIndex < mathRoundProblems.length-1){
+      mathRoundIndex++;
+      loadMathProblem();
+    }else{
+      finishMathRound();
+    }
+  });
+
+  function finishMathRound(){
+    mathStats.roundsPlayed++;
+    saveMathStats(mathStats);
+    showScreen(screenMathResults);
+
+    const total = mathRoundProblems.length;
+    mathResultsScore.textContent = `${mathRoundScore} / ${total}`;
+    const pct = Math.round((mathRoundScore/total)*100);
+    mathResultsSub.textContent = pct===100 ? "Every problem correct!" : `${pct}% correct this round`;
+
+    if(mathMissed.length===0){
+      mathAllCorrectBanner.classList.remove("hidden");
+      mathMissedWrap.classList.add("hidden");
+      mathRetryMissedBtn.classList.add("hidden");
+    }else{
+      mathAllCorrectBanner.classList.add("hidden");
+      mathMissedWrap.classList.remove("hidden");
+      mathRetryMissedBtn.classList.remove("hidden");
+      mathMissedList.innerHTML = "";
+      mathMissed.forEach(p=>{
+        const li = document.createElement("li");
+        li.textContent = p.reviewText ? p.reviewText : (p.isCounting ? `? = ${p.answer}` : p.promptText.replace("?", p.answer));
+        mathMissedList.appendChild(li);
+      });
+    }
+    renderMathStats();
+  }
+
+  mathRetryMissedBtn.addEventListener("click", ()=>{
+    mathRoundProblems = buildMathRound(null, null, mathMissed);
+    beginMathRound();
+  });
+
+  mathNewRoundBtn.addEventListener("click", ()=>{
+    mathRoundProblems = buildMathRound(lastMathCategories, lastMathRoundLength);
+    beginMathRound();
+  });
+
+  mathMenuBtn.addEventListener("click", ()=>{
+    showScreen(screenHome);
+  });
+
+
+  /* =========================================================
+     INIT
+  ========================================================= */
   renderStats();
   renderModes();
   renderCategories();
@@ -1056,6 +1749,12 @@
   if(!speechSupported){
     speechWarning.classList.remove("hidden");
   }
+
+  renderMathStats();
+  renderMathCategories();
+  renderMathLengths();
+
+  showScreen(screenHome);
 })();
 </script>
 </body>
